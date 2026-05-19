@@ -63,7 +63,7 @@
    UCM_WSS_PORT=8089
    UCM_WS_PORT=5000
    UCM_WSS_PATH=/ws
-   SIP_PASSWORD=qwer369
+   SIP_PASSWORD=ssss
    ```
 2. قم بتحميل الاعتمادات الجديدة:
    ```bash
