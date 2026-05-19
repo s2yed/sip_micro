@@ -9,6 +9,10 @@ class UcmConfig {
   static String get wssPath => dotenv.env['UCM_WSS_PATH'] ?? '/ws';
   static String get sipPassword => dotenv.env['SIP_PASSWORD'] ?? 'qwer369';
 
+  static String get clientMode => dotenv.env['CLIENT_MODE'] ?? 'register'; // 'register' or 'anonymous'
+  static String get defaultCallTarget => dotenv.env['DEFAULT_CALL_TARGET'] ?? '100';
+  static String get anonymousDisplayName => dotenv.env['ANONYMOUS_DISPLAY_NAME'] ?? 'عميل';
+
   static String get wsUrl => 'wss://$host:$wssPort$wssPath';
 
   static String sipUri(String ext) => 'sip:$ext@$host';

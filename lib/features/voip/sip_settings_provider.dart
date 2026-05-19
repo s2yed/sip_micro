@@ -1,3 +1,4 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -7,7 +8,11 @@ class SipSettings {
 
   const SipSettings({required this.myExtension, required this.callTarget});
 
-  bool get isConfigured => myExtension.isNotEmpty && callTarget.isNotEmpty;
+  bool get isConfigured {
+    final bool isAnonymous = dotenv.env['CLIENT_MODE'] == 'anonymous';
+    if (isAnonymous) return true;
+    return myExtension.isNotEmpty && callTarget.isNotEmpty;
+  }
 }
 
 class SipSettingsNotifier extends AsyncNotifier<SipSettings> {

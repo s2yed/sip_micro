@@ -102,6 +102,15 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
     _helper.addSipUaHelperListener(this);
     _registrationStarted = false;
 
+    final bool isAnonymous = UcmConfig.clientMode == 'anonymous';
+    if (isAnonymous) {
+      _registrationStarted = true;
+      // defer so build() returns before _helper.start() fires callbacks
+      Future.microtask(_startRegistration);
+      return const SipState(
+          registrationStatus: SipRegistrationStatus.registering);
+    }
+
     // settings are async — watch and start registration once they load
     ref.listen(sipSettingsProvider, (_, next) {
       next.whenData((settings) {
@@ -134,7 +143,12 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
 
   Future<void> _startRegistration() async {
     final settings = _settings;
-    if (!settings.isConfigured) return;
+    final bool isAnonymous = UcmConfig.clientMode == 'anonymous';
+    if (!settings.isConfigured && !isAnonymous) return;
+
+    final String myExt = isAnonymous
+        ? 'guest_${100000 + (DateTime.now().microsecondsSinceEpoch % 900000)}'
+        : settings.myExtension;
 
     final ua = UaSettings()
       ..transportType = TransportType.WS
@@ -142,10 +156,10 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
       ..webSocketSettings = (WebSocketSettings()
         ..allowBadCertificate = true
         ..extraHeaders = {})
-      ..uri = UcmConfig.sipUri(settings.myExtension)
-      ..authorizationUser = settings.myExtension
-      ..password = UcmConfig.sipPassword
-      ..displayName = settings.myExtension
+      ..uri = UcmConfig.sipUri(myExt)
+      ..authorizationUser = isAnonymous ? null : myExt
+      ..password = isAnonymous ? null : UcmConfig.sipPassword
+      ..displayName = isAnonymous ? UcmConfig.anonymousDisplayName : myExt
       ..userAgent = 'SipClient/1.0'
       ..iceServers = [
         {
@@ -161,7 +175,7 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
       ]
       ..iceTransportPolicy = IceTransportPolicy.ALL
       ..sessionTimers = false
-      ..register = true;
+      ..register = !isAnonymous;
 
     await _helper.start(ua);
   }
@@ -185,7 +199,9 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
       return;
     }
 
-    if (!state.isRegistered) {
+    final bool isAnonymous = UcmConfig.clientMode == 'anonymous';
+
+    if (!state.isRegistered && (!isAnonymous || !_helper.connected)) {
       final msg = state.registrationStatus == SipRegistrationStatus.failed
           ? 'فشل الاتصال بالخادم، تحقق من الشبكة'
           : 'جارٍ الاتصال بالخادم، يرجى الانتظار';
@@ -193,7 +209,7 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
       return;
     }
 
-    final target = _settings.callTarget;
+    final target = isAnonymous ? UcmConfig.defaultCallTarget : _settings.callTarget;
     if (target.isEmpty) {
       state = state.copyWith(
         status: CallStatus.failed,
@@ -604,6 +620,12 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
       case TransportStateEnum.CONNECTING:
         _safeSetState((st) =>
             st.copyWith(registrationStatus: SipRegistrationStatus.registering));
+      case TransportStateEnum.CONNECTED:
+        final bool isAnonymous = UcmConfig.clientMode == 'anonymous';
+        if (isAnonymous) {
+          _safeSetState((st) =>
+              st.copyWith(registrationStatus: SipRegistrationStatus.registered));
+        }
       case TransportStateEnum.DISCONNECTED:
         _safeSetState((st) => st.copyWith(
               registrationStatus: st.registrationStatus == SipRegistrationStatus.registered
