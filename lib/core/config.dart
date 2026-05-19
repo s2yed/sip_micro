@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 class UcmConfig {
@@ -9,9 +11,13 @@ class UcmConfig {
   static String get wssPath => dotenv.env['UCM_WSS_PATH'] ?? '/ws';
   static String get sipPassword => dotenv.env['SIP_PASSWORD'] ?? 'qwer369';
 
-  static String get clientMode => dotenv.env['CLIENT_MODE'] ?? 'register'; // 'register', 'anonymous', or 'pool'
-  static String get defaultCallTarget => dotenv.env['DEFAULT_CALL_TARGET'] ?? '100';
-  static String get anonymousDisplayName => dotenv.env['ANONYMOUS_DISPLAY_NAME'] ?? 'عميل';
+  static String get clientMode =>
+      dotenv.env['CLIENT_MODE'] ??
+      'register'; // 'register', 'anonymous', or 'pool'
+  static String get defaultCallTarget =>
+      dotenv.env['DEFAULT_CALL_TARGET'] ?? '100';
+  static String get anonymousDisplayName =>
+      dotenv.env['ANONYMOUS_DISPLAY_NAME'] ?? 'عميل';
 
   static String get wsUrl => 'wss://$host:$wssPort$wssPath';
 
@@ -19,8 +25,16 @@ class UcmConfig {
 
   static String get myExtension {
     if (_selectedExtension != null) return _selectedExtension!;
-    final poolStr = dotenv.env['CLIENT_EXTENSIONS_POOL'] ?? dotenv.env['DEFAULT_MY_EXTENSION'] ?? '1034';
-    final List<String> list = poolStr.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    final poolStr =
+        dotenv.env['CLIENT_EXTENSIONS_POOL'] ??
+        dotenv.env['DEFAULT_MY_EXTENSION'] ??
+        '1034';
+    final List<String> list = poolStr
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+    print("Extension list: ${list.toString()}");
     if (list.isEmpty) {
       _selectedExtension = '1034';
     } else {
