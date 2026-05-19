@@ -102,8 +102,10 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
     _helper.addSipUaHelperListener(this);
     _registrationStarted = false;
 
-    final bool isAnonymous = UcmConfig.clientMode == 'anonymous';
-    if (isAnonymous) {
+    final String mode = UcmConfig.clientMode;
+    final bool isAnonymous = mode == 'anonymous';
+    final bool isPool = mode == 'pool';
+    if (isAnonymous || isPool) {
       _registrationStarted = true;
       // defer so build() returns before _helper.start() fires callbacks
       Future.microtask(_startRegistration);
@@ -143,11 +145,13 @@ class SipNotifier extends Notifier<SipState> implements SipUaHelperListener {
 
   Future<void> _startRegistration() async {
     final settings = _settings;
-    final bool isAnonymous = UcmConfig.clientMode == 'anonymous';
-    if (!settings.isConfigured && !isAnonymous) return;
+    final String mode = UcmConfig.clientMode;
+    final bool isAnonymous = mode == 'anonymous';
+    final bool isPool = mode == 'pool';
+    if (!settings.isConfigured && !isAnonymous && !isPool) return;
 
-    final String myExt = isAnonymous
-        ? 'guest_${100000 + (DateTime.now().microsecondsSinceEpoch % 900000)}'
+    final String myExt = (isAnonymous || isPool)
+        ? UcmConfig.myExtension
         : settings.myExtension;
 
     final ua = UaSettings()

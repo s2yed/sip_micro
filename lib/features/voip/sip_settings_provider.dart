@@ -9,8 +9,8 @@ class SipSettings {
   const SipSettings({required this.myExtension, required this.callTarget});
 
   bool get isConfigured {
-    final bool isAnonymous = dotenv.env['CLIENT_MODE'] == 'anonymous';
-    if (isAnonymous) return true;
+    final String mode = dotenv.env['CLIENT_MODE'] ?? 'register';
+    if (mode == 'anonymous' || mode == 'pool') return true;
     return myExtension.isNotEmpty && callTarget.isNotEmpty;
   }
 }
